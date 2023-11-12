@@ -2,6 +2,8 @@ package com.brij1999.vitaarth.ui.main
 
 import android.Manifest
 import android.app.AlarmManager
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -26,16 +28,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            arrayOf(Manifest.permission.RECEIVE_SMS, Manifest.permission.POST_NOTIFICATIONS)
-        } else {
-            arrayOf(Manifest.permission.RECEIVE_SMS)
-        }
-        requestPermissions(permissions, SMS_PERMISSION_CODE)
-
-        // Start the Foreground Service to keep SmsReceiver alive.
-        val serviceIntent = Intent(this, SmsForegroundService::class.java)
-        startForegroundService(serviceIntent)
+        requestPermissions()
+        setupNotificationChannels()
+        setupSMSForegroundService()
+        setupDailySMSAudit()
 
         scanBtn = findViewById(R.id.scanBtn)
         scanBtn.setOnClickListener {
@@ -50,6 +46,33 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupNotificationChannels() {
+        val notificationManager = getSystemService(NotificationManager::class.java)
+
+        notificationManager.createNotificationChannel(
+            NotificationChannel(
+                "SMS_AUDIT_ALERTS",
+                "SMS Audit Alerts",
+                NotificationManager.IMPORTANCE_DEFAULT
+            )
+        )
+    }
+
+    private fun requestPermissions() {
+        val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            arrayOf(Manifest.permission.RECEIVE_SMS, Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            arrayOf(Manifest.permission.RECEIVE_SMS)
+        }
+        requestPermissions(permissions, SMS_PERMISSION_CODE)
+    }
+
+    private fun setupSMSForegroundService() {
+        // Start the Foreground Service to keep SmsReceiver alive.
+        val serviceIntent = Intent(this, SmsForegroundService::class.java)
+        startForegroundService(serviceIntent)
+    }
+
     private fun setupDailySMSAudit() {
         val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
@@ -57,7 +80,7 @@ class MainActivity : AppCompatActivity() {
         val intent = Intent(this, DailySMSAudit::class.java)
         val pendingIntent = PendingIntent.getBroadcast(
             this,
-            DailySMSAudit.ALARM_REQUEST_CODE,
+            DailySMSAudit.SMS_AUDIT_ALARM_REQUEST_CODE,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -77,5 +100,8 @@ class MainActivity : AppCompatActivity() {
             AlarmManager.INTERVAL_DAY,
             pendingIntent
         )
+
+        // fire audit once for testing and init
+        sendBroadcast(intent)
     }
 }
