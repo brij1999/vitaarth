@@ -17,6 +17,9 @@ class DailySMSAudit : BroadcastReceiver() {
     companion object {
         const val SMS_AUDIT_ALARM_REQUEST_CODE = 123
         const val SMS_AUDIT_NOTIFICATION_ID = 456
+        const val CHANNEL_ID = "SMSAuditAlertsChannel"
+        const val CHANNEL_NAME = "SMS Audit Alerts Channel"
+        const val CHANNEL_IMPORTANCE = NotificationManager.IMPORTANCE_DEFAULT
     }
 
     override fun onReceive(context: Context?, intent: Intent?) {
@@ -35,7 +38,15 @@ class DailySMSAudit : BroadcastReceiver() {
             "${Telephony.Sms.DATE} DESC"
         )
 
-        cursor?.use { c ->
+        val notificationBuilder = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle("SMS Audit Complete")
+            .setContentText("${cursor!!.count} sms were audited.")
+
+        val notificationManager = context.getSystemService(NotificationManager::class.java)
+        notificationManager.notify(SMS_AUDIT_NOTIFICATION_ID, notificationBuilder.build())
+
+        cursor.use { c ->
             while (c.moveToNext()) {
                 val address = c.getString(c.getColumnIndexOrThrow(Telephony.Sms.ADDRESS))
                 val body = c.getString(c.getColumnIndexOrThrow(Telephony.Sms.BODY))
@@ -44,16 +55,8 @@ class DailySMSAudit : BroadcastReceiver() {
                 val sdf = SimpleDateFormat("dd-MMM-yyyy HH:mm:ss", Locale.getDefault())
                 val formattedDate = sdf.format(Date(dateInMillis))
 
-                Log.d(TAG, "Address: $address, Body: $body, Date: $formattedDate")
+                Log.d(TAG, "Date: $formattedDate, Address: $address")
             }
         }
-
-        val notificationBuilder = NotificationCompat.Builder(context, "SMS_AUDIT_ALERTS")
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("SMS Audit Complete")
-            .setContentText("${cursor!!.count} sms were audited.")
-
-        val notificationManager = context.getSystemService(NotificationManager::class.java)
-        notificationManager.notify(SMS_AUDIT_NOTIFICATION_ID, notificationBuilder.build())
     }
 }

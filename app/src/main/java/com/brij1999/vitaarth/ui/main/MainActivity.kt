@@ -12,6 +12,7 @@ import android.os.Bundle
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import com.brij1999.vitaarth.R
+import com.brij1999.vitaarth.ui.scan.ScanActivity
 import com.brij1999.vitaarth.ui.transaction.TransactionActivity
 import com.brij1999.vitaarth.utils.DailySMSAudit
 import com.brij1999.vitaarth.utils.SmsForegroundService
@@ -22,20 +23,23 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var scanBtn: Button
     private lateinit var txnBtn: Button
-    private val SMS_PERMISSION_CODE = 200
+
+    companion object {
+        private const val GLOBAL_PERMISSION_REQUEST_CODE = 200
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        requestPermissions()
+        requestGlobalPermissions()
         setupNotificationChannels()
         setupSMSForegroundService()
         setupDailySMSAudit()
 
         scanBtn = findViewById(R.id.scanBtn)
         scanBtn.setOnClickListener {
-            val intent = Intent(this, TransactionActivity::class.java)
+            val intent = Intent(this, ScanActivity::class.java)
             startActivity(intent)
         }
 
@@ -48,23 +52,35 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupNotificationChannels() {
         val notificationManager = getSystemService(NotificationManager::class.java)
-
         notificationManager.createNotificationChannel(
             NotificationChannel(
-                "SMS_AUDIT_ALERTS",
-                "SMS Audit Alerts",
-                NotificationManager.IMPORTANCE_DEFAULT
+                DailySMSAudit.CHANNEL_ID,
+                DailySMSAudit.CHANNEL_NAME,
+                DailySMSAudit.CHANNEL_IMPORTANCE
+            )
+        )
+        notificationManager.createNotificationChannel(
+            NotificationChannel(
+                SmsForegroundService.CHANNEL_ID,
+                SmsForegroundService.CHANNEL_NAME,
+                SmsForegroundService.CHANNEL_IMPORTANCE
             )
         )
     }
 
-    private fun requestPermissions() {
+    private fun requestGlobalPermissions() {
         val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            arrayOf(Manifest.permission.RECEIVE_SMS, Manifest.permission.POST_NOTIFICATIONS)
+            arrayOf(
+                Manifest.permission.READ_SMS,
+                Manifest.permission.RECEIVE_SMS,
+                Manifest.permission.POST_NOTIFICATIONS)
         } else {
-            arrayOf(Manifest.permission.RECEIVE_SMS)
+            arrayOf(
+                Manifest.permission.READ_SMS,
+                Manifest.permission.RECEIVE_SMS
+            )
         }
-        requestPermissions(permissions, SMS_PERMISSION_CODE)
+        requestPermissions(permissions, GLOBAL_PERMISSION_REQUEST_CODE)
     }
 
     private fun setupSMSForegroundService() {
