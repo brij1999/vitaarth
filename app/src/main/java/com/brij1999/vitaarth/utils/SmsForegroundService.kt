@@ -16,15 +16,16 @@ class SmsForegroundService : Service() {
     private val TAG = "SmsForegroundService"
     
     private val smsReceiver: SmsReceiver = SmsReceiver()
-    private val CHANNEL_ID = "ForegroundServiceChannel"
-    private val CHANNEL_NAME = "Foreground Service Channel"
 
-    val NOTIFICATION_ID = 101
     private val NOTIFICATION_TITLE = "Vitaarth : Listening for transactions"
     private val NOTIFICATION_TEXT = "Running in the background"
 
     companion object {
         var isAlive = false
+        const val NOTIFICATION_ID = 101
+        const val CHANNEL_ID = "ForegroundServiceChannel"
+        const val CHANNEL_NAME = "Foreground Service Channel"
+        const val CHANNEL_IMPORTANCE = NotificationManager.IMPORTANCE_DEFAULT
     }
 
     override fun onCreate() {
@@ -36,7 +37,6 @@ class SmsForegroundService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "onStartCommand: hola!")
-        createNotificationChannel()
         startForeground(NOTIFICATION_ID, createNotification())
         return START_STICKY
     }

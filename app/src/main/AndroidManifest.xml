@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.CREATE_NOTIFICATION_CHANNEL" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.RECEIVE_SMS"/>
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <application
@@ -17,6 +20,9 @@
         android:theme="@style/Theme.Vitaarth"
         tools:targetApi="31">
         <activity
+            android:name=".ui.scan.ScanActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.transaction.TransactionActivity"
             android:exported="false" />
         <activity
@@ -28,9 +34,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <service
             android:name=".utils.SmsForegroundService"
             android:stopWithTask="false" />
+
         <receiver android:name=".utils.DailySMSAudit" />
     </application>
 
