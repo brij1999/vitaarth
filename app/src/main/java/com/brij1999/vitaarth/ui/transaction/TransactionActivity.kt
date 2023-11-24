@@ -10,7 +10,6 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.brij1999.vitaarth.R
 import com.brij1999.vitaarth.data.Transaction
-import com.brij1999.vitaarth.io.TransactionManager
 import kotlinx.coroutines.*
 
 
@@ -29,7 +28,7 @@ class TransactionActivity : AppCompatActivity() {
 
         // Retrieve the Transaction object passed from the previous activity
         runBlocking {
-            transaction = TransactionManager.getTransaction("rO3dlHDleq1UHVnqAM3d") ?: Transaction()
+            transaction = Transaction.fetch("rO3dlHDleq1UHVnqAM3d") ?: Transaction()
         }
 
         amountEditText = findViewById(R.id.amountEditText)
@@ -106,7 +105,7 @@ class TransactionActivity : AppCompatActivity() {
         // Update the transaction in Firebase Firestore
         MainScope().launch(Dispatchers.Main) {
             withContext(Dispatchers.IO) {
-                TransactionManager.addTransaction(updatedTransaction)
+                updatedTransaction.save()
             }
             Toast.makeText(this@TransactionActivity, "Transaction updated successfully", Toast.LENGTH_SHORT).show()
             finish()

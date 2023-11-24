@@ -18,15 +18,13 @@ class SmsReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Telephony.Sms.Intents.SMS_RECEIVED_ACTION)    return
         Log.d(TAG, "onReceive: SMS Intent received")
-        for (smsMessage: SmsMessage in Telephony.Sms.Intents.getMessagesFromIntent(intent)) {
-            Log.d(TAG, "[${smsMessage.timestampMillis}]\tMessage from ${smsMessage.originatingAddress}: ${smsMessage.messageBody}")
+        for (sms: SmsMessage in Telephony.Sms.Intents.getMessagesFromIntent(intent)) {
+            val smsSender = sms.originatingAddress.toString()
+            val smsMessage = sms.messageBody
+            val smsTimestamp = sms.timestampMillis
+
             GlobalScope.launch(Dispatchers.IO) {
-                for (template: Template in TemplateManager.getAllTemplates()) {
-                    if (!template.matches(smsMessage))    continue
-                    val transaction = template.parse(smsMessage)
-                    TransactionManager.addTransaction(transaction)
-                    break
-                }
+                val transaction = Template.assimilate(smsSender, smsMessage, smsTimestamp)
             }
         }
     }

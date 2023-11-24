@@ -12,9 +12,9 @@ import android.os.Bundle
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import com.brij1999.vitaarth.R
+import com.brij1999.vitaarth.io.DailySmsAuditReceiver
 import com.brij1999.vitaarth.ui.scan.ScanActivity
 import com.brij1999.vitaarth.ui.transaction.TransactionActivity
-import com.brij1999.vitaarth.utils.DailySMSAudit
 import com.brij1999.vitaarth.utils.SmsForegroundService
 import java.util.*
 
@@ -54,9 +54,9 @@ class MainActivity : AppCompatActivity() {
         val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager.createNotificationChannel(
             NotificationChannel(
-                DailySMSAudit.CHANNEL_ID,
-                DailySMSAudit.CHANNEL_NAME,
-                DailySMSAudit.CHANNEL_IMPORTANCE
+                DailySmsAuditReceiver.CHANNEL_ID,
+                DailySmsAuditReceiver.CHANNEL_NAME,
+                DailySmsAuditReceiver.CHANNEL_IMPORTANCE
             )
         )
         notificationManager.createNotificationChannel(
@@ -93,10 +93,10 @@ class MainActivity : AppCompatActivity() {
         val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
         // Create an intent for the BroadcastReceiver
-        val intent = Intent(this, DailySMSAudit::class.java)
+        val intent = Intent(this, DailySmsAuditReceiver::class.java)
         val pendingIntent = PendingIntent.getBroadcast(
             this,
-            DailySMSAudit.SMS_AUDIT_ALARM_REQUEST_CODE,
+            DailySmsAuditReceiver.SMS_AUDIT_ALARM_REQUEST_CODE,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )

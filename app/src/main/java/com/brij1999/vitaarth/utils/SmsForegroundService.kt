@@ -3,6 +3,7 @@ package com.brij1999.vitaarth.utils
 import android.app.*
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
 import android.os.IBinder
 import android.provider.Telephony
 import android.util.Log
@@ -37,7 +38,7 @@ class SmsForegroundService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "onStartCommand: hola!")
-        startForeground(NOTIFICATION_ID, createNotification())
+        startForeground(NOTIFICATION_ID, createNotification(), FOREGROUND_SERVICE_TYPE_DATA_SYNC)
         return START_STICKY
     }
 
