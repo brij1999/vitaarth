@@ -52,9 +52,10 @@ class DailySmsAuditReceiver : BroadcastReceiver() {
                 val smsSender = c.getString(c.getColumnIndexOrThrow(Telephony.Sms.ADDRESS))
                 val smsMessage = c.getString(c.getColumnIndexOrThrow(Telephony.Sms.BODY))
                 val smsTimestamp = c.getLong(c.getColumnIndexOrThrow(Telephony.Sms.DATE))
+                val smsSource = "SMS -> $TAG"
 
                 GlobalScope.launch(Dispatchers.IO) {
-                    val transaction = Template.assimilate(smsSender, smsMessage, smsTimestamp)
+                    val transaction = Template.assimilate(smsSender, smsMessage, smsSource, smsTimestamp)
                 }
             }
         }

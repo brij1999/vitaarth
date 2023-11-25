@@ -22,9 +22,10 @@ class SmsReceiver : BroadcastReceiver() {
             val smsSender = sms.originatingAddress.toString()
             val smsMessage = sms.messageBody
             val smsTimestamp = sms.timestampMillis
+            val smsSource = "SMS -> $TAG"
 
             GlobalScope.launch(Dispatchers.IO) {
-                val transaction = Template.assimilate(smsSender, smsMessage, smsTimestamp)
+                val transaction = Template.assimilate(smsSender, smsMessage, smsSource, smsTimestamp)
             }
         }
     }

@@ -12,6 +12,7 @@ data class Transaction (
     var amount: Double? = null,
     var account: String? = null,
     var description: String? = null,
+    var sourceTag: String,
     var extra_params: Map<String, String>? = null,
 ) {
     companion object {
@@ -33,13 +34,15 @@ data class Transaction (
     }
 
     override fun toString(): String {
-        var output = """Transaction(
+        var output = """
+        Transaction(
         |   id='$id', 
         |   time='$time',
         |   type='$type',
         |   amount='$amount',
         |   account='$account',
         |   description='$description',
+        |   sourceTag='$sourceTag',
         """.trimIndent()
         if (extra_params!=null) {
             extra_params!!.forEach { (key, value) ->

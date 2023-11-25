@@ -28,7 +28,7 @@ class TransactionActivity : AppCompatActivity() {
 
         // Retrieve the Transaction object passed from the previous activity
         runBlocking {
-            transaction = Transaction.fetch("rO3dlHDleq1UHVnqAM3d") ?: Transaction()
+            transaction = Transaction.fetch("rO3dlHDleq1UHVnqAM3d") ?: Transaction(sourceTag = "ADD -> TransactionActivity")
         }
 
         amountEditText = findViewById(R.id.amountEditText)
@@ -99,7 +99,8 @@ class TransactionActivity : AppCompatActivity() {
             amount = amountEditText.text.toString().toDouble(),
             account = accountEditText.text.toString(),
             type = typeEditText.text.toString(),
-            description = descriptionEditText.text.toString()
+            description = descriptionEditText.text.toString(),
+            sourceTag = "UPDATE -> TransactionActivity"
         )
 
         // Update the transaction in Firebase Firestore
