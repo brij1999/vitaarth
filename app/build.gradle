@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId "com.brij1999.vitaarth"
-        minSdk 29
+        minSdk 31
         targetSdk 34
         versionCode 1
         versionName "1.0"
@@ -53,4 +53,6 @@ dependencies {
     implementation 'com.github.yuriy-budiyev:code-scanner:2.3.2'
     implementation 'androidx.activity:activity-ktx:1.8.0'
     implementation 'androidx.fragment:fragment-ktx:1.6.2'
+
+    implementation 'com.google.code.gson:gson:2.9.0'
 }

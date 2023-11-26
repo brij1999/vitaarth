@@ -10,7 +10,11 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.brij1999.vitaarth.R
 import com.brij1999.vitaarth.data.Transaction
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 
 
 class TransactionActivity : AppCompatActivity() {
@@ -21,6 +25,8 @@ class TransactionActivity : AppCompatActivity() {
     private lateinit var typeEditText: EditText
     private lateinit var descriptionEditText: EditText
     private lateinit var updateButton: Button
+
+    private val TAG = "TransactionActivity"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,8 +46,8 @@ class TransactionActivity : AppCompatActivity() {
         // Populate the views with transaction details
         populateTransactionDetails()
 
-        // Add a TextWatcher to track changes in any field
-        addTextWatchers()
+        // Add listeners to track changes in the text fields field
+        addTextChangeListeners()
 
         // Set an OnClickListener for the Update button
         updateButton.setOnClickListener {
@@ -56,7 +62,7 @@ class TransactionActivity : AppCompatActivity() {
         descriptionEditText.setText(transaction.description)
     }
 
-    private fun addTextWatchers() {
+    private fun addTextChangeListeners() {
         amountEditText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {}
@@ -100,17 +106,15 @@ class TransactionActivity : AppCompatActivity() {
             account = accountEditText.text.toString(),
             type = typeEditText.text.toString(),
             description = descriptionEditText.text.toString(),
-            sourceTag = "UPDATE -> TransactionActivity"
         )
 
         // Update the transaction in Firebase Firestore
         MainScope().launch(Dispatchers.Main) {
             withContext(Dispatchers.IO) {
-                updatedTransaction.save()
+                updatedTransaction.save("UPDATE -> APP | $TAG | updateTransaction")
             }
             Toast.makeText(this@TransactionActivity, "Transaction updated successfully", Toast.LENGTH_SHORT).show()
             finish()
         }
     }
 }
-

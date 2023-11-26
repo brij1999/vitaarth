@@ -5,7 +5,8 @@ import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 class Template (
     var id: String = "",
@@ -20,15 +21,14 @@ class Template (
         private const val collectionName = "templates"
         private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
 
-        suspend fun assimilate(smsSender: String, smsMessage: String, smsSource: String, smsTimestamp: Long): Transaction? {
+        suspend fun assimilate(smsSender: String, smsMessage: String, smsSourceTag: String, smsTimestamp: Long): Transaction? {
             val sdf = SimpleDateFormat("dd-MMM-yyyy HH:mm:ss", Locale.getDefault())
             val formattedDate = sdf.format(Date(smsTimestamp))
             Log.d(TAG, "assimilate: [$formattedDate]\tMessage from $smsSender -> $smsMessage")
 
             for (template: Template in fetchAll()) {
                 if (!template.matches(smsSender, smsMessage))    continue
-                val transaction = template.parse(smsSender, smsMessage, smsSource, smsTimestamp)
-                transaction.save()
+                val transaction = template.parse(smsSender, smsMessage, smsSourceTag, smsTimestamp)
                 Log.d(TAG, "assimilate: Result -> $transaction")
                 return transaction
             }
@@ -58,7 +58,7 @@ class Template (
         return Regex(regex).matches(searchStr)
     }
 
-    private fun parse(smsSender: String, smsMessage: String, smsSource: String, smsTimestamp: Long): Transaction {
+    private suspend fun parse(smsSender: String, smsMessage: String, smsSourceTag: String, smsTimestamp: Long): Transaction {
         val timestamp = Timestamp(smsTimestamp/1000, ((smsTimestamp % 1000) * 1000000).toInt())
         val searchStr = "${smsSender}<\\>${smsMessage}"
         val match = Regex(regex).find(searchStr)
@@ -78,10 +78,9 @@ class Template (
             time = timestamp,
             amount = amt,
             account = account,
-            sourceTag = smsSource,
             type = if(type!="") type else null,
             extra_params = params,
-        )
+        ).save(smsSourceTag)
         return transaction
     }
 

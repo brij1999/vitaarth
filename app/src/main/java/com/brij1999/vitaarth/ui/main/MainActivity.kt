@@ -16,7 +16,7 @@ import com.brij1999.vitaarth.io.DailySmsAuditReceiver
 import com.brij1999.vitaarth.ui.scan.ScanActivity
 import com.brij1999.vitaarth.ui.transaction.TransactionActivity
 import com.brij1999.vitaarth.utils.SmsForegroundService
-import java.util.*
+import java.util.Calendar
 
 
 class MainActivity : AppCompatActivity() {
@@ -25,6 +25,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var txnBtn: Button
 
     companion object {
+        private const val TAG = "MainActivity"
         private const val GLOBAL_PERMISSION_REQUEST_CODE = 200
     }
 
@@ -48,6 +49,11 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this, TransactionActivity::class.java)
             startActivity(intent)
         }
+
+//        GlobalScope.launch(Dispatchers.Main) {
+//            val t = Transaction.fetch("0SX6UttsI0ihOA4F82uf")
+//            Log.d(TAG, "onCreate: $t")
+//        }
     }
 
     private fun setupNotificationChannels() {
@@ -118,6 +124,6 @@ class MainActivity : AppCompatActivity() {
         )
 
         // fire audit once for testing and init
-        sendBroadcast(intent)
+         sendBroadcast(intent)
     }
 }

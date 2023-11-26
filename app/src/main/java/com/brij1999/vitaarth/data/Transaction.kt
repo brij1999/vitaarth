@@ -12,8 +12,11 @@ data class Transaction (
     var amount: Double? = null,
     var account: String? = null,
     var description: String? = null,
-    var sourceTag: String,
+    var sourceTag: String? = "",
     var extra_params: Map<String, String>? = null,
+    var createdAt: Timestamp? = null,
+    var updateAt: Timestamp? = null,
+    var changeLog: MutableList<MutableMap<String, *>>? = mutableListOf(),
 ) {
     companion object {
         private const val TAG = "Transaction"
@@ -49,16 +52,37 @@ data class Transaction (
                 output+="\n|        extra_params.$key -> $value"
             }
         }
+        output+="\n"+""""
+        |   createdAt='$createdAt',
+        |   updatedAt='$updateAt',
+        """.trimIndent()
         return "$output\n)"
     }
 
-    suspend fun save() {
+    suspend fun save(tag: String): Transaction {
+        val now = System.currentTimeMillis()
+        val timestamp = Timestamp(now/1000, ((now % 1000) * 1000000).toInt())
+
         val documentRef = if (id == null) {
             firestore.collection(collectionName).document()
         } else {
             firestore.collection(collectionName).document(id!!)
         }
-        if (id == null)    id = documentRef.id
+
+        if (id == null) {
+            id = documentRef.id
+            createdAt = timestamp
+        }
+
+        sourceTag=tag
+        updateAt = timestamp
+        updateChangeLog(tag, now)
         documentRef.set(this).await()
+        return this
+    }
+
+    private fun updateChangeLog(tag: String, now: Long) {
+         val event = mutableMapOf("tag" to tag, "time" to Timestamp(now/1000, ((now % 1000) * 1000000).toInt()))
+        changeLog!!.add(event)
     }
 }
