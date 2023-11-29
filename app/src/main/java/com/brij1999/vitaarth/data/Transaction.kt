@@ -1,8 +1,11 @@
 package com.brij1999.vitaarth.data
 
+import android.util.Log
+import com.brij1999.vitaarth.utils.toFormattedString
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import java.util.Date
 
 
 data class Transaction (
@@ -13,11 +16,13 @@ data class Transaction (
     var account: String? = null,
     var description: String? = null,
     var sourceTag: String? = "",
-    var extra_params: Map<String, String>? = null,
+    var extraParams: Map<String, String>? = null,
     var createdAt: Timestamp? = null,
-    var updateAt: Timestamp? = null,
+    var updatedAt: Timestamp? = null,
     var changeLog: MutableList<MutableMap<String, *>>? = mutableListOf(),
 ) {
+    //TODO: implement "forceCreate" to record missed near-identical transactions
+
     companion object {
         private const val TAG = "Transaction"
         private const val collectionName = "transactions"
@@ -37,52 +42,125 @@ data class Transaction (
     }
 
     override fun toString(): String {
-        var output = """
-        Transaction(
-        |   id='$id', 
-        |   time='$time',
-        |   type='$type',
-        |   amount='$amount',
-        |   account='$account',
-        |   description='$description',
-        |   sourceTag='$sourceTag',
+        return """
+        Transaction:
+        |   id: '$id' 
+        |   time: '${time?.toDate()?.toString()}'
+        |   type: '$type'
+        |   amount: '$amount'
+        |   account: '$account'
+        |   description: '$description'
+        |   sourceTag: '$sourceTag'
+        |   createdAt: '${createdAt?.toDate()?.toString()}'
+        |   updatedAt: '${updatedAt?.toDate()?.toString()}'
+        |   extraParams: $extraParams
         """.trimIndent()
-        if (extra_params!=null) {
-            extra_params!!.forEach { (key, value) ->
-                output+="\n|        extra_params.$key -> $value"
-            }
-        }
-        output+="\n"+""""
-        |   createdAt='$createdAt',
-        |   updatedAt='$updateAt',
-        """.trimIndent()
-        return "$output\n)"
     }
 
     suspend fun save(tag: String): Transaction {
-        val now = System.currentTimeMillis()
-        val timestamp = Timestamp(now/1000, ((now % 1000) * 1000000).toInt())
-
-        val documentRef = if (id == null) {
-            firestore.collection(collectionName).document()
-        } else {
-            firestore.collection(collectionName).document(id!!)
-        }
-
-        if (id == null) {
-            id = documentRef.id
-            createdAt = timestamp
-        }
+        var existingTransaction: Transaction? = null
+        val diff: Long = 2 * 60 * 1000            // 2 minutes
+        val now = Timestamp.now()
+        val transactionsCollection = firestore.collection(collectionName)
 
         sourceTag=tag
-        updateAt = timestamp
-        updateChangeLog(tag, now)
-        documentRef.set(this).await()
+        updatedAt = now
+        updateChangeLog(sourceTag!!, updatedAt!!)
+
+        val res = transactionsCollection
+            .whereGreaterThanOrEqualTo("time", Timestamp(Date(time!!.toDate().time - diff)))
+            .whereLessThanOrEqualTo("time", Timestamp(Date(time!!.toDate().time + diff)))
+            .whereEqualTo("amount", amount)
+            .whereEqualTo("account", account)
+            .get()
+            .await()
+
+        res.documents
+            .mapNotNull { document -> document.toObject(Transaction::class.java) }
+            .sortedBy { transaction -> transaction.time!!.seconds }
+            .forEach { transaction ->
+                existingTransaction = transaction
+            }
+
+        if (existingTransaction==null) {
+            createdAt = now
+            id = generateId()
+            transactionsCollection.document(id!!).set(this).await()
+            Log.d(TAG, "save: Created new transaction -> $id")
+        } else {
+            Log.d(TAG, "save: found existing match for [ $id ]\t->\t[ ${existingTransaction!!.id} ]")
+            updateThisWith(existingTransaction!!)
+        }
+
         return this
     }
 
-    private fun updateChangeLog(tag: String, now: Long) {
-         val event = mutableMapOf("tag" to tag, "time" to Timestamp(now/1000, ((now % 1000) * 1000000).toInt()))
+    private suspend fun updateThisWith(other: Transaction) {
+        val fieldsUpdated = mutableSetOf<String>()
+        printDiff(other)
+
+        id = other.id ?: id?.also { fieldsUpdated.add("id") }
+        time = other.time ?: time?.also { fieldsUpdated.add("time") }
+        type = other.type ?: type?.also { fieldsUpdated.add("type") }
+        amount = other.amount ?: amount?.also { fieldsUpdated.add("amount") }
+        account = other.account ?: account?.also { fieldsUpdated.add("account") }
+        description = other.description ?: description?.also { fieldsUpdated.add("description") }
+        extraParams = other.extraParams ?: extraParams?.also { fieldsUpdated.add("extraParams") }
+        createdAt = other.createdAt ?: createdAt?.also { fieldsUpdated.add("createdAt") }
+
+        // CAUTION: Review this logic if this fn gets used outside "save()"
+        if (fieldsUpdated.isNotEmpty()) {
+            Log.d(TAG, "updateThisWith: Updated null values for fields: [${fieldsUpdated.joinToString(separator = ", ")}]")
+            other.changeLog!!.add(changeLog!!.last())
+            changeLog = other.changeLog
+            firestore.collection(collectionName).document(id!!).set(this).await()
+        } else {
+            sourceTag = other.sourceTag ?: sourceTag
+            updatedAt = other.updatedAt ?: updatedAt
+            changeLog = other.changeLog ?: changeLog
+        }
+    }
+
+    private fun printDiff(other: Transaction) {
+        val fields = Transaction::class.members
+            .filterIsInstance<java.lang.reflect.Field>()
+            .filter { it.name != "changeLog" } // Exclude changeLog from comparison
+
+        // Check if there are any differences
+        val hasDifferences = fields.any { field ->
+            field.isAccessible = true
+            val thisValue = field.get(this)
+            val otherValue = field.get(other)
+            thisValue != otherValue
+        }
+
+        Log.d(TAG, "printDiff: [ $id ]    v/s    [ ${other.id} ]")
+        if (hasDifferences) {
+            Log.d(TAG, "printDiff: ------------: <Transaction Diff> :------------")
+            for (field in fields) {
+                field.isAccessible = true
+                val thisValue = field.get(this)
+                val otherValue = field.get(other)
+
+                if (thisValue != otherValue) {
+                    Log.d(TAG, "printDiff: ${field.name}:")
+                    Log.d(TAG, "printDiff:     This: $thisValue")
+                    Log.d(TAG, "printDiff:     Other: $otherValue")
+                }
+            }
+            Log.d(TAG, "printDiff: ------------: </Transaction Diff> :------------")
+        } else {
+            Log.d(TAG, "printDiff: ------------: <no difference found> :------------")
+        }
+    }
+
+
+    private fun updateChangeLog(tag: String, time: Timestamp) {
+        val event = mutableMapOf("tag" to tag, "time" to time)
         changeLog!!.add(event)
+    }
+
+    private fun generateId(): String {
+        return "["+time!!.toDate().toFormattedString("yyyy-MM-dd HH:mm:ss")+"] | ["+createdAt!!.toDate().toFormattedString("yyyy-MM-dd HH:mm:ss")+"]"
     }
 }

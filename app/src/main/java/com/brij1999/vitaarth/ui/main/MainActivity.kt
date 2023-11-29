@@ -51,7 +51,7 @@ class MainActivity : AppCompatActivity() {
         }
 
 //        GlobalScope.launch(Dispatchers.Main) {
-//            val t = Transaction.fetch("0SX6UttsI0ihOA4F82uf")
+//            val t = Transaction.fetch("1DjiYRlrZEtOEBskl8xh")
 //            Log.d(TAG, "onCreate: $t")
 //        }
     }

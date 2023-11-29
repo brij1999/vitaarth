@@ -4,9 +4,6 @@ import android.util.Log
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class Template (
     var id: String = "",
@@ -22,21 +19,16 @@ class Template (
         private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
 
         suspend fun assimilate(smsSender: String, smsMessage: String, smsSourceTag: String, smsTimestamp: Long): Transaction? {
-            val sdf = SimpleDateFormat("dd-MMM-yyyy HH:mm:ss", Locale.getDefault())
-            val formattedDate = sdf.format(Date(smsTimestamp))
-            Log.d(TAG, "assimilate: [$formattedDate]\tMessage from $smsSender -> $smsMessage")
-
-            for (template: Template in fetchAll()) {
+            for (template: Template in all()) {
                 if (!template.matches(smsSender, smsMessage))    continue
                 val transaction = template.parse(smsSender, smsMessage, smsSourceTag, smsTimestamp)
                 Log.d(TAG, "assimilate: Result -> $transaction")
                 return transaction
             }
-            Log.d(TAG, "assimilate: Result -> null")
             return null
         }
 
-        suspend fun fetchAll(): List<Template> {
+        suspend fun all(): List<Template> {
             val querySnapshot = firestore.collection(collectionName).get().await()
             return querySnapshot.documents.mapNotNull { document ->
                 document.toObject(Template::class.java)
@@ -79,7 +71,7 @@ class Template (
             amount = amt,
             account = account,
             type = if(type!="") type else null,
-            extra_params = params,
+            extraParams = params,
         ).save(smsSourceTag)
         return transaction
     }
