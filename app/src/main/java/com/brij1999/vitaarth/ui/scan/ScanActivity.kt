@@ -1,10 +1,11 @@
 package com.brij1999.vitaarth.ui.scan
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.brij1999.vitaarth.R
+import com.brij1999.vitaarth.ui.transaction.TransactionActivity
 import com.budiyev.android.codescanner.CodeScanner
 import com.budiyev.android.codescanner.CodeScannerView
 import com.budiyev.android.codescanner.DecodeCallback
@@ -23,8 +24,9 @@ class ScanActivity : AppCompatActivity() {
         mCodeScanner = CodeScanner(this, scannerView)
         mCodeScanner!!.decodeCallback = DecodeCallback { result ->
             runOnUiThread {
-                val readText: TextView = findViewById(R.id.read_text)
-                readText.text = result.text
+                val intent = Intent(this, TransactionActivity::class.java)
+                intent.putExtra("UPI_STRING", result.text)
+                startActivity(intent)
             }
         }
         mCodeScanner!!.errorCallback =

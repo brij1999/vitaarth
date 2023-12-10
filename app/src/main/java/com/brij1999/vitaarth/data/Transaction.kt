@@ -16,10 +16,10 @@ data class Transaction (
     var account: String? = null,
     var description: String? = null,
     var sourceTag: String? = "",
-    var extraParams: Map<String, String>? = null,
+    var extraParams: MutableMap<String, String> = mutableMapOf(),
     var createdAt: Timestamp? = null,
     var updatedAt: Timestamp? = null,
-    var changeLog: MutableList<MutableMap<String, *>>? = mutableListOf(),
+    var changeLog: MutableList<MutableMap<String, *>> = mutableListOf(),
 ) {
     //TODO: implement "forceCreate" to record missed near-identical transactions
 
@@ -67,13 +67,13 @@ data class Transaction (
         updatedAt = now
         updateChangeLog(sourceTag!!, updatedAt!!)
 
-        val res = transactionsCollection
+        var query = transactionsCollection
             .whereGreaterThanOrEqualTo("time", Timestamp(Date(time!!.toDate().time - diff)))
             .whereLessThanOrEqualTo("time", Timestamp(Date(time!!.toDate().time + diff)))
             .whereEqualTo("amount", amount)
-            .whereEqualTo("account", account)
-            .get()
-            .await()
+
+        if (account!=null)  query = query.whereEqualTo("account", account)
+        val res = query.get().await()
 
         res.documents
             .mapNotNull { document -> document.toObject(Transaction::class.java) }
@@ -105,19 +105,25 @@ data class Transaction (
         amount = other.amount ?: amount?.also { fieldsUpdated.add("amount") }
         account = other.account ?: account?.also { fieldsUpdated.add("account") }
         description = other.description ?: description?.also { fieldsUpdated.add("description") }
-        extraParams = other.extraParams ?: extraParams?.also { fieldsUpdated.add("extraParams") }
         createdAt = other.createdAt ?: createdAt?.also { fieldsUpdated.add("createdAt") }
+
+
+        if (extraParams.isEmpty()) {
+            extraParams = other.extraParams
+        } else if (other.extraParams.isNotEmpty()) {
+            extraParams.putAll(other.extraParams)
+        }
 
         // CAUTION: Review this logic if this fn gets used outside "save()"
         if (fieldsUpdated.isNotEmpty()) {
             Log.d(TAG, "updateThisWith: Updated null values for fields: [${fieldsUpdated.joinToString(separator = ", ")}]")
-            other.changeLog!!.add(changeLog!!.last())
+            other.changeLog.add(changeLog.last())
             changeLog = other.changeLog
             firestore.collection(collectionName).document(id!!).set(this).await()
         } else {
             sourceTag = other.sourceTag ?: sourceTag
             updatedAt = other.updatedAt ?: updatedAt
-            changeLog = other.changeLog ?: changeLog
+            changeLog = other.changeLog.ifEmpty { changeLog }
         }
     }
 
@@ -157,7 +163,7 @@ data class Transaction (
 
     private fun updateChangeLog(tag: String, time: Timestamp) {
         val event = mutableMapOf("tag" to tag, "time" to time)
-        changeLog!!.add(event)
+        changeLog.add(event)
     }
 
     private fun generateId(): String {

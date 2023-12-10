@@ -78,13 +78,23 @@
         android:minLines="3" />
 
     <Button
-        android:id="@+id/updateButton"
+        android:id="@+id/saveButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/descriptionEditText"
         android:layout_marginTop="16dp"
+        android:text="Save"
         android:visibility="gone"
-        android:text="Update"
+        android:textAllCaps="true" />
+
+    <Button
+        android:id="@+id/upiButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/saveButton"
+        android:layout_marginTop="16dp"
+        android:text="Initiate UPI payment"
+        android:visibility="gone"
         android:textAllCaps="true" />
 
 </RelativeLayout>

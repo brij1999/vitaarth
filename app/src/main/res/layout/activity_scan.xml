@@ -28,22 +28,4 @@
 
     </com.budiyev.android.codescanner.CodeScannerView>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="3"
-        android:paddingHorizontal="10dp"
-        android:paddingVertical="10dp">
-
-        <TextView
-            android:id="@+id/read_text"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:fontFamily="sans-serif-medium"
-            android:gravity="center"
-            android:text="Scan something..."
-            android:textSize="20sp"
-            />
-    </LinearLayout>
-
 </LinearLayout>
